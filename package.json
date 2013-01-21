@@ -1,0 +1,22 @@
+{
+  "name": "list-queue",
+  "version": "0.0.0",
+  "description": "ERROR: No README.md file found!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "redis": "~0.8.2"
+  },
+  "devDependencies": {
+    "should": "~1.2.1",
+    "mocha": "~1.8.1"
+  },
+  "scripts": {
+    "test": "NODE_ENV=test ./node_modules/mocha/bin/mocha --reporter spec"
+  }
+}
