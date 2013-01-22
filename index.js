@@ -10,7 +10,7 @@ module.exports = function(port, host, options) {
 				throw new Error("Queue name must be provided. eg. 'emailQueue'.");
 			}
 
-			enqueueClient.rpush("listqueue." + queueName, JSON.stringify({
+			enqueueClient.rpush("qmin." + queueName, JSON.stringify({
 				byPid: process.pid,
 				byTitle: process.title,
 				queueName: queueName,
@@ -21,7 +21,7 @@ module.exports = function(port, host, options) {
 
 		listen: function(queueName, handler) {
 			var listenClient = redis.createClient.apply(redis, initArgs);
-			listenClient.blpop("listqueue." + queueName, 0, function(err, data) {
+			listenClient.blpop("qmin." + queueName, 0, function(err, data) {
 				if(err) return handler(err);
 
 				try {

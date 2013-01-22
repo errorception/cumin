@@ -1,17 +1,15 @@
 {
-  "name": "list-queue",
+  "name": "qmin",
   "version": "0.0.0",
-  "description": "ERROR: No README.md file found!",
+  "description": "A minimalistic library to work with redis-based queues",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": "",
   "author": "",
-  "license": "BSD",
+  "license": "MIT",
   "dependencies": {
     "redis": "~0.8.2"
   },
+  "keywords": ["redis", "queue"],
   "devDependencies": {
     "should": "~1.2.1",
     "mocha": "~1.8.1"

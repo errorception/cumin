@@ -1,16 +1,16 @@
 var should = require("should"),
 	redisClient = require("redis").createClient(),
-	listqueue = require("../")();
+	qmin = require("../")();
 
 describe(".enqueue", function() {
 	it("should enqueue a job", function(done) {
-		listqueue.enqueue("test.list", {some: "task"}, function(err) {
+		qmin.enqueue("test.list", {some: "task"}, function(err) {
 			should.not.exist(err);
 
-			redisClient.llen("listqueue.test.list", function(err, len) {
+			redisClient.llen("qmin.test.list", function(err, len) {
 				len.should.equal(1);
 
-				redisClient.lpop("listqueue.test.list", function(err, item) {
+				redisClient.lpop("qmin.test.list", function(err, item) {
 					item = JSON.parse(item);
 
 					item.byPid.should.be.a("number");
@@ -28,9 +28,9 @@ describe(".enqueue", function() {
 
 describe(".listen", function() {
 	it("should listen to a list", function(done) {
-		listqueue.enqueue("test.list", {some: "task"});
+		qmin.enqueue("test.list", {some: "task"});
 
-		listqueue.listen("test.list", function(err, queueData) {
+		qmin.listen("test.list", function(err, queueData) {
 			should.not.exist(err);
 
 			queueData.should.eql({some: "task"});
@@ -41,7 +41,7 @@ describe(".listen", function() {
 	it("should listen to multiple lists simultaneously without blocking each other", function(done) {
 		var itemsPopped = 0;
 
-		listqueue.listen("test.list1", function(err, queueData) {
+		qmin.listen("test.list1", function(err, queueData) {
 			should.not.exist(err);
 
 			queueData.should.eql({taskFor: "list1"});
@@ -52,7 +52,7 @@ describe(".listen", function() {
 			}
 		});
 
-		listqueue.listen("test.list2", function(err, queueData) {
+		qmin.listen("test.list2", function(err, queueData) {
 			should.not.exist(err);
 
 			queueData.should.eql({taskFor: "list2"});
@@ -63,8 +63,8 @@ describe(".listen", function() {
 			}
 		});
 
-		listqueue.enqueue("test.list1", {taskFor: "list1"});
-		listqueue.enqueue("test.list2", {taskFor: "list2"});
+		qmin.enqueue("test.list1", {taskFor: "list1"});
+		qmin.enqueue("test.list2", {taskFor: "list2"});
 	});
 
 	it("should only pop to one listener, even if there are multiple listeners", function(done) {
@@ -76,10 +76,10 @@ describe(".listen", function() {
 			itemsPopped++;
 		};
 
-		listqueue.listen("test.list3", handler);
-		listqueue.listen("test.list3", handler);
+		qmin.listen("test.list3", handler);
+		qmin.listen("test.list3", handler);
 
-		listqueue.enqueue("test.list3", {some: "task"});
+		qmin.enqueue("test.list3", {some: "task"});
 
 		setTimeout(function() {
 			itemsPopped.should.equal(1);
