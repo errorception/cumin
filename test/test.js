@@ -30,9 +30,7 @@ describe(".listen", function() {
 	it("should listen to a list", function(done) {
 		qmin.enqueue("test.list", {some: "task"});
 
-		qmin.listen("test.list", function(err, queueData) {
-			should.not.exist(err);
-
+		qmin.listen("test.list", function(queueData) {
 			queueData.should.eql({some: "task"});
 			done();
 		});
@@ -41,9 +39,7 @@ describe(".listen", function() {
 	it("should listen to multiple lists simultaneously without blocking each other", function(done) {
 		var itemsPopped = 0;
 
-		qmin.listen("test.list1", function(err, queueData) {
-			should.not.exist(err);
-
+		qmin.listen("test.list1", function(queueData) {
 			queueData.should.eql({taskFor: "list1"});
 			itemsPopped++;
 
@@ -52,9 +48,7 @@ describe(".listen", function() {
 			}
 		});
 
-		qmin.listen("test.list2", function(err, queueData) {
-			should.not.exist(err);
-
+		qmin.listen("test.list2", function(queueData) {
 			queueData.should.eql({taskFor: "list2"});
 			itemsPopped++;
 
@@ -69,9 +63,7 @@ describe(".listen", function() {
 
 	it("should only pop to one listener, even if there are multiple listeners", function(done) {
 		var itemsPopped = 0;
-		var handler = function(err, queueData) {
-			should.not.exist(err);
-
+		var handler = function(queueData) {
 			queueData.should.eql({some: "task"});
 			itemsPopped++;
 		};
@@ -86,4 +78,42 @@ describe(".listen", function() {
 			done();
 		}, 1000);	// 1 second should be enough for everyone - Paraphrasing Bill Gates
 	});
+
+	it("should maintain an internal counter of in-flight queue items", function(done) {
+		qmin._inFlightCount().should.equal(0);
+
+		qmin.listen("test.list4", function(item, finished) {
+			qmin._inFlightCount().should.equal(1);
+			finished();
+			qmin._inFlightCount().should.equal(0);
+
+			done();
+		});
+
+		qmin.enqueue("test.list4", {some: "task"});
+	});
+/*
+	it("should maintain the internal counter for multiple queueItems too", function(done) {
+		qmin._inFlightCount().should.equal(0);
+
+		var maxCounter = 0, finishedCount = 0;
+		qmin.listen("test.list4", function(item, finished) {
+			console.log("Called", item, qmin._inFlightCount());
+			maxCounter = qmin._inFlightCount() < maxCounter ? maxCounter : qmin._inFlightCount();
+
+			setTimeout(function() {
+				finished();
+				finishedCount++;
+
+				if(finishedCount === 2) {
+					maxCounter.should.equal(2);
+					done();
+				}
+			}, 1000);
+		});
+
+		qmin.enqueue("test.list4", {some: "task"});
+		qmin.enqueue("test.list4", {some: "other task"});
+	});
+*/
 });
