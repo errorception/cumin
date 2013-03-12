@@ -2,7 +2,7 @@
   "name": "qmin",
   "version": "0.0.0",
   "description": "A minimalistic library to work with redis-based queues",
-  "main": "index.js",
+  "main": "lib/qmin.js",
   "repository": "",
   "author": "",
   "license": "MIT",

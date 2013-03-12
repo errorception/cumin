@@ -22,7 +22,7 @@ describe(".enqueue", function() {
 					done();
 				});
 			});
-		});
+		}, 100);
 	});
 });
 
@@ -36,84 +36,25 @@ describe(".listen", function() {
 		});
 	});
 
-	it("should listen to multiple lists simultaneously without blocking each other", function(done) {
-		var itemsPopped = 0;
+	it("should not listen to another list while already listening to the first", function() {
+		try {
+			qmin.listen("test.list2", function() {});
+		} catch(e) {
+			e.should.exist;
+			return;
+		}
 
-		qmin.listen("test.list1", function(queueData) {
-			queueData.should.eql({taskFor: "list1"});
-			itemsPopped++;
-
-			if(itemsPopped === 2) {
-				done();
-			}
-		});
-
-		qmin.listen("test.list2", function(queueData) {
-			queueData.should.eql({taskFor: "list2"});
-			itemsPopped++;
-
-			if(itemsPopped === 2) {
-				done();
-			}
-		});
-
-		qmin.enqueue("test.list1", {taskFor: "list1"});
-		qmin.enqueue("test.list2", {taskFor: "list2"});
+		true.should.not.exist;	// Ensure that control flow doesn't reach here at all
 	});
 
-	it("should only pop to one listener, even if there are multiple listeners", function(done) {
-		var itemsPopped = 0;
-		var handler = function(queueData) {
-			queueData.should.eql({some: "task"});
-			itemsPopped++;
-		};
+	it("should not even listen to the same list again", function() {
+		try {
+			qmin.listen("test.list", function() {});
+		} catch(e) {
+			e.should.exist;
+			return;
+		}
 
-		qmin.listen("test.list3", handler);
-		qmin.listen("test.list3", handler);
-
-		qmin.enqueue("test.list3", {some: "task"});
-
-		setTimeout(function() {
-			itemsPopped.should.equal(1);
-			done();
-		}, 1000);	// 1 second should be enough for everyone - Paraphrasing Bill Gates
+		true.should.not.exist;	// Ensure that control flow doesn't reach here at all
 	});
-
-	it("should maintain an internal counter of in-flight queue items", function(done) {
-		qmin._inFlightCount().should.equal(0);
-
-		qmin.listen("test.list4", function(item, finished) {
-			qmin._inFlightCount().should.equal(1);
-			finished();
-			qmin._inFlightCount().should.equal(0);
-
-			done();
-		});
-
-		qmin.enqueue("test.list4", {some: "task"});
-	});
-/*
-	it("should maintain the internal counter for multiple queueItems too", function(done) {
-		qmin._inFlightCount().should.equal(0);
-
-		var maxCounter = 0, finishedCount = 0;
-		qmin.listen("test.list4", function(item, finished) {
-			console.log("Called", item, qmin._inFlightCount());
-			maxCounter = qmin._inFlightCount() < maxCounter ? maxCounter : qmin._inFlightCount();
-
-			setTimeout(function() {
-				finished();
-				finishedCount++;
-
-				if(finishedCount === 2) {
-					maxCounter.should.equal(2);
-					done();
-				}
-			}, 1000);
-		});
-
-		qmin.enqueue("test.list4", {some: "task"});
-		qmin.enqueue("test.list4", {some: "other task"});
-	});
-*/
 });
