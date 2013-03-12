@@ -1,15 +1,15 @@
 {
-  "name": "qmin",
+  "name": "cumin",
   "version": "0.0.0",
   "description": "A minimalistic library to work with redis-based queues",
-  "main": "lib/qmin.js",
+  "main": "lib/cumin.js",
   "repository": "",
   "author": "",
   "license": "MIT",
   "dependencies": {
     "redis": "~0.8.2"
   },
-  "keywords": ["redis", "queue"],
+  "keywords": ["redis", "queue", "distributed"],
   "devDependencies": {
     "should": "~1.2.1",
     "mocha": "~1.8.1"
