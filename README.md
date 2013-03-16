@@ -1,7 +1,7 @@
 cumin
 ======
 
-A minimal queue implementation backed by [redis](http://redis.io/). Meant for high-throughput queues. Built for graceful shutdown.
+A minimal queue library for node.js, backed by [redis](http://redis.io/). Meant for high-throughput queues. Built for graceful shutdown.
 
 One way to build large applications is to not build large applications at all, and instead split the application into small discrete logical pieces. A common way to talk between such micro-applications is to use message queues.
 
@@ -13,7 +13,7 @@ Inspired by [Resque](https://github.com/defunkt/resque) and [Kue](https://github
 
 ## Example
 
-In ```app.js```:
+In `app.js`:
 
 ```javascript
 var cumin = require("cumin")();
@@ -25,7 +25,7 @@ cumin.enqueue("mailer", {
 });
 ```
 
-In ```mailer.js```:
+In `mailer.js`:
 
 ```javascript
 var cumin = require("cumin")();
@@ -44,15 +44,15 @@ cumin.listen("mailer", function(mailJob, done) {
 });
 ```
 
-An example can also be found in the ```examples``` directory. ```node examples/enqueue.js``` writes messages at the rate of once every 10ms to a redis queue. ```node examples/listen.js``` pops from the queue and simulates a 1s long task with the message.
+An example can also be found in the `examples` directory. `node examples/enqueue.js` writes a messages every 10ms to a redis queue. `node examples/listen.js` pops from the queue and simulates a 1s long task with the message.
 
 ## Graceful shutdowns
 
-One of the benefits of having a distributed setup like the one that ```cumin``` encourages, is that you get to shut down parts of your app so that you can do upgrades etc. without any visible impact to your users. However, because of node's eventing model, your ```.listen```er app might have already picked up multiple items from the queue and might still be processing them when you kill your app. To prevent loss of tasks that might be mid-flight, ```cumin```adds a couple of graceful-shutdown features.
+One of the benefits of having a distributed setup like the one that `cumin` encourages, is that you get to shut down parts of your app so that you can do upgrades etc. without any visible impact to your users. However, because of node's eventing model, your `.listen`er app might have already picked up multiple items from the queue and might still be processing them when you kill your app. To prevent loss of tasks that might be mid-flight, `cumin`adds a couple of graceful-shutdown features.
 
-When you give either a ```SIGINT``` or a ```SIGTERM``` kill-signal to an app that is ```.listen```ing to a queue, ```cumin``` will first stop accepting more items from redis. It will then wait for all in-flight jobs to complete. Only when all pending jobs have been completed does the app shut down. This ensures that you don't lose  any items from your queue.
+When you give either a `SIGINT` or a `SIGTERM` kill-signal to an app that is `.listen`ing to a queue, `cumin` will first stop accepting more items from redis. It will then wait for all in-flight jobs to complete. Only when all pending jobs have been completed does the app shut down. This ensures that you don't lose  any items from your queue.
 
-In case you want to bypass this check and kill the app anyway, you can simply send the ```SIGINT``` or ```SIGTERM``` signal a second time. The second signal will force a shutdown without regards for in-flight jobs.
+In case you want to bypass this check and kill the app anyway, you can simply send the `SIGINT` or `SIGTERM` signal a second time. The second signal will force a shutdown without regards for in-flight jobs.
 
 ## Installation
 
@@ -70,11 +70,11 @@ Initializes  the library. All parameters are optional, and default to localhost 
 
 ### cumin.enqueue(queueName, queueData, [cb])
 
-Enqueues ```queueData``` into a queue with name ```queueName```. You can optionally provide a callback to be called when the enqueue operation is complete. ```queueName``` should be a string following redis' key naming rules. ```queueData``` should be an object that will be ```JSON.stringify```ied and put into the queue.
+Enqueues `queueData` into a queue with name `queueName`. You can optionally provide a callback to be called when the enqueue operation is complete. `queueName` should be a string following redis' key naming rules. `queueData` should be an object that will be `JSON.stringify`ied and put into the queue.
 
 ### cumin.listen(queueName, function(queueItem, done) { ... });
 
-Pops items out from the ```queueName``` queue. The callback will be called whenever an item is popped, and the ```queueItem``` will be passed in as an argument. The second argument to the callback is a function that should be called when the processing of the queue items is complete.
+Pops items out from the `queueName` queue. The callback will be called whenever an item is popped, and the `queueItem` will be passed in as an argument. The second argument to the callback is a function that should be called when the processing of the queue items is complete.
 
 ## Pattern: Series of queues
 
@@ -92,11 +92,15 @@ cumin.listen("queue1", function(queueItem, done) {
 });
 ```
 
-Now, some other application can ```.listen``` to ```queue2``` and run its own filters and/or transforms, passing the data from queue to queue, until it finally gets written to the db. Since ```weShouldProcess``` is effectively the only thing this application does, it's easy to spin up more processes to share the load, or even run this across more physical computers, making scaling very easy. Also, in the event of a crash, the entire application doesn't crash - just one component - and messages intended for it remain recorded in redis for when it's back up. Heck, if one of your apps can be better implemented in a different language, that shouldn't be hard either!
+Now, some other application can `.listen` to `queue2` and run its own filters and/or transforms, passing the data from queue to queue, until it finally gets written to the db. Since `weShouldProcess` is effectively the only thing this application does, it's easy to spin up more processes to share the load, or even run this across more physical computers, making scaling very easy. Also, in the event of a crash, the entire application doesn't crash - just one component - and messages intended for it remain recorded in redis for when it's back up. Heck, if one of your apps can be better implemented in a different language, that shouldn't be hard either!
 
 ## Monitoring
 
-```cumin``` also stores some metadata about the queue activity in redis itself, so that you can monitor the health of the queue. Check out the [cumin-monitor](https://github.com/errorception/cumin-monitor) app for a real-time queue-monitoring tool that works with ```cumin```.
+`cumin` also stores some metadata about the queue activity in redis itself, so that you can monitor the health of the queue. Check out the [cumin-monitor](https://github.com/errorception/cumin-monitor) app for a real-time queue-monitoring tool that works with `cumin`.
+
+## Todo
+
+* `.listen`'s `done` callback should accept errors. Come up with a way to deal with such failures. Maybe some staggered retry logic.
 
 ## License
 
