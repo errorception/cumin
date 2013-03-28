@@ -9,7 +9,7 @@ Cumin is a library to put items into a queue, and to 'listen' to the queue for n
 
 Inspired by [Resque](https://github.com/defunkt/resque) and [Kue](https://github.com/learnboost/kue). Adapted to fit node's style of doing multiple things simultaneously in the same process, and to work for high-throughput message scenarios.
 
-**Beta!** This library shouldn't be considered production-ready yet. However, please use this in your apps and let me know what you think.
+This library is in heavy use at [Errorception](http://errorception.com/).
 
 ## Example
 
