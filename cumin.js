@@ -113,12 +113,19 @@ module.exports = function(port, host, options) {
 			nonBlockingClient.publish("cumin.enqueued", message, done);
 		},
 
-		listen: function(queueName, handler, autoReconnect) {
+		listen: function(queueName, autoReconnect, handler) {
+
+			// Do the argument shuffle
+			if (!handler) {
+				handler = autoReconnect;
+				autoReconnect = false;
+			}
+
 			if(!queueName) {
 				throw new Error(consolePrefix, "Queue name must be provided. eg. 'emailQueue'.");
 			}
 
-			if(!handler) {
+			if(!handler || typeof handler !== 'function') {
 				throw new Error(consolePrefix, "You must provide a hander to .listen.");
 			}
 
