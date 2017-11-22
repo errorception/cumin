@@ -1,7 +1,7 @@
 {
   "author": "Rakesh Pai <rakeshpai@errorception.com> (http://errorception.com)",
   "name": "cumin",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A minimalistic library for redis-based queues",
   "main": "./cumin.js",
   "repository": {
