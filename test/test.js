@@ -1,6 +1,7 @@
 var should = require("should"),
 	redisClient = require("redis").createClient(),
-	cumin = require("../")();
+	cuminCreator = require("../"),
+	cumin = cuminCreator();
 
 describe(".enqueue", function() {
 	it("should enqueue a job", function(done) {
@@ -13,10 +14,10 @@ describe(".enqueue", function() {
 				redisClient.lpop("cumin.test.list", function(err, item) {
 					item = JSON.parse(item);
 
-					item.byPid.should.be.a("number");
-					item.byTitle.should.be.a("string");
+					item.byPid.should.be.a.Number;
+					item.byTitle.should.be.a.String;
 					item.queueName.should.equal("test.list");
-					item.date.should.be.a("number");
+					item.date.should.be.a.Number;
 					(Date.now() - item.date).should.be.within(0, 500);
 					item.data.should.eql({some: "task"});
 					done();
@@ -30,8 +31,9 @@ describe(".listen", function() {
 	it("should listen to a list", function(done) {
 		cumin.enqueue("test.list", {some: "task"});
 
-		cumin.listen("test.list", function(queueData) {
+		cumin.listen("test.list", function(queueData, doneTask) {
 			queueData.should.eql({some: "task"});
+			doneTask();
 			done();
 		});
 	});
@@ -57,4 +59,19 @@ describe(".listen", function() {
 
 		true.should.not.exist;	// Ensure that control flow doesn't reach here at all
 	});
+
+	it('should enqueue with promises', function(done) {
+		cumin.enqueue('test.list3', { some: 'task' }).then(function(task) {
+			done();
+		});
+	});
+
+	it('should listen with promises', function(done) {
+		var cumin = cuminCreator();
+		var delay = () => new Promise(resolve => setTimeout(resolve, 300));
+		cumin.listen('test.list3', async task => {
+			await delay();
+			done();
+		});
+	})
 });

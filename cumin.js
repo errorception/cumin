@@ -1,6 +1,8 @@
 var redis = require("redis");
 var consolePrefix = "[cumin]";
 
+var promisify = require('util').promisify || function(x) { return x; };
+
 module.exports = function(port, host, options) {
 	var redisArgs = arguments;
 
@@ -26,30 +28,22 @@ module.exports = function(port, host, options) {
 			}, killWaitTimeout * 1000)
 		} else {
 			console.info("\n" + consolePrefix, "Forcing shutdown now.");
-			process.exit(1);
+			setTimeout(process.exit, 500);
 		}
 	}
 
-	function attemptCleanShutdown(safeMode) {
+	function attemptCleanShutdown() {
 		console.info(consolePrefix, "Not reconnecting to redis because of kill signal received.");
-		if(safeMode) {
-			if(pendingTasks == 0) {
-				console.info(consolePrefix, "No pending tasks. Exiting now.");
-				process.exit();
-			} else {
-				console.info(consolePrefix, "Waiting for pending tasks to be completed. Pending count:", pendingTasks);
-			}
+		if(pendingTasks == 0) {
+			console.info(consolePrefix, "No pending tasks. Exiting now.");
+			process.exit();
 		} else {
-			console.info(consolePrefix, "We've been working in 'no-guarantees' mode. Giving time for pending tasks, if any, to complete.");
-			console.info(consolePrefix, "This is not cool. Shutdown might be unclean.");
-			console.info(consolePrefix, "To learn how to fix this, please refer to the docs.");
-			console.info(consolePrefix, "Waiting 3 seconds to exit...");
-			setTimeout(process.exit, 3000);
+			console.info(consolePrefix, "Waiting for pending tasks to be completed. Pending count:", pendingTasks);
 		}
 	}
 
 	function continueListening(queueName, handler) {
-		var safeMode = (handler.length > 1);
+		var promiseMode = (handler.length < 2);
 
 		if(killSignalReceived) return attemptCleanShutdown(safeMode);
 
@@ -63,25 +57,28 @@ module.exports = function(port, host, options) {
 
 				var queueItem = JSON.parse(data[1]);
 
-				if(safeMode) {
-					pendingTasks++;
-					handler(queueItem.data, function() {
-						pendingTasks--;
+				var handlerOnComplete = function() {
+					pendingTasks--;
+					
+					nonBlockingClient.hset("cuminmeta." + bareQueueName, "completed", Date.now());
+					nonBlockingClient.publish("cumin.processed", data[1]);
 
-						nonBlockingClient.hset("cuminmeta." + bareQueueName, "completed", Date.now());
-						nonBlockingClient.publish("cumin.processed", data[1]);
+					if(killSignalReceived && pendingTasks) {
+						console.info(consolePrefix, "Waiting for pending tasks to be completed. Pending count:", pendingTasks);
+					}
 
-						if(killSignalReceived && pendingTasks) {
-							console.info(consolePrefix, "Waiting for pending tasks to be completed. Pending count:", pendingTasks);
-						}
+					if(killSignalReceived && !pendingTasks) {
+						console.info(consolePrefix, "Pending tasks completed. Shutting down now.");
+						process.exit();
+					}
+				}
 
-						if(killSignalReceived && !pendingTasks) {
-							console.info(consolePrefix, "Pending tasks completed. Shutting down now.");
-							process.exit();
-						}
-					});
+				pendingTasks++;
+
+				if(promiseMode) {
+					handler(queueItem.data).then(handlerOnComplete);
 				} else {
-					handler(queueItem.data);
+					handler(queueItem.data, handlerOnComplete);
 				}
 			}
 
@@ -92,7 +89,7 @@ module.exports = function(port, host, options) {
 	}
 
 	return {
-		enqueue: function(queueName, queueData, done) {
+		enqueue: promisify(function(queueName, queueData, done) {
 			if(!queueName) {
 				throw new Error("Queue name must be provided. eg. 'emailQueue'.");
 			}
@@ -111,7 +108,7 @@ module.exports = function(port, host, options) {
 			nonBlockingClient.hset("cuminmeta." + queueName, "lastEnqueued", now);
 			nonBlockingClient.rpush("cumin." + queueName, message);
 			nonBlockingClient.publish("cumin.enqueued", message, done);
-		},
+		}),
 
 		listen: function(queueName, handler) {
 			if(!queueName) {
@@ -135,12 +132,10 @@ module.exports = function(port, host, options) {
 			alreadyListening = true;
 
 			if(handler.length < 2) {
-				console.warn(consolePrefix, "We are going to .listen in the 'no-guarantees' mode. This is not cool.");
-				console.warn(consolePrefix, "Refer to the docs to learn how to fix this.");
-				console.warn(consolePrefix, "Continuing anyway.");
+				console.log('Assuming that the handler returns a promise.');
 			}
 
-			continueListening("cumin." + queueName, handler);
+			continueListening("cumin." + queueName, promisify(handler));
 		}
 	}
 }
