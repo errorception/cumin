@@ -45,7 +45,7 @@ module.exports = function(port, host, options) {
 	function continueListening(queueName, handler) {
 		var promiseMode = (handler.length < 2);
 
-		if(killSignalReceived) return attemptCleanShutdown(safeMode);
+		if(killSignalReceived) return attemptCleanShutdown();
 
 		blockingClient.blpop(queueName, redisBlpopTimeout, function(err, data) {
 			if(err) return console.log(err);
