@@ -132,7 +132,7 @@ module.exports = function(port, host, options) {
 			alreadyListening = true;
 
 			if(handler.length < 2) {
-				console.log('Assuming that the handler returns a promise.');
+				console.log(consolePrefix, 'Assuming that the handler returns a promise.');
 			}
 
 			continueListening("cumin." + queueName, promisify(handler));

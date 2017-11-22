@@ -46,6 +46,17 @@ cumin.listen("mailer", function(mailJob, done) {
 
 An example can also be found in the `examples` directory. `node examples/enqueue.js` writes a messages every 10ms to a redis queue. `node examples/listen.js` pops from the queue and simulates a 1s long task with the message.
 
+With async/await:
+```javascript
+const cumin = require('cumin')();
+
+await cumin.enqueue(...); // Await waits till enqueue is complete
+
+cumin.listen('mailer', async mailJob => {   // Async function, no `done`.
+    ...
+});
+```
+
 ## Graceful shutdowns
 
 One of the benefits of having a distributed setup like the one that `cumin` encourages, is that you get to shut down parts of your app so that you can do upgrades etc. without any visible impact to your users. However, because of node's eventing model, your `.listen`er app might have already picked up multiple items from the queue and might still be processing them when you kill your app. To prevent loss of tasks that might be mid-flight, `cumin`adds a couple of graceful-shutdown features.
@@ -98,18 +109,6 @@ Now, some other application can `.listen` to `queue2` and run its own filters an
 
 `cumin` also stores some metadata about the queue activity in redis itself, so that you can monitor the health of the queue. Check out the [cumin-monitor](https://github.com/errorception/cumin-monitor) app for a real-time queue-monitoring tool that works with `cumin`.
 
-## Todo
-
-* `.listen`'s `done` callback should accept errors. Come up with a way to deal with such failures. Maybe some staggered retry logic.
-
 ## License
 
-(The MIT License)
-
-Copyright (c) 2012 Rakesh Pai <rakeshpai@errorception.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MIT
