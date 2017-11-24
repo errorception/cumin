@@ -135,7 +135,7 @@ module.exports = function(port, host, options) {
 				console.log(consolePrefix, 'Assuming that the handler returns a promise.');
 			}
 
-			continueListening("cumin." + queueName, promisify(handler));
+			continueListening("cumin." + queueName, handler);
 		}
 	}
 }
